@@ -1,0 +1,8 @@
+\newcommand{\calc1}{MATH-192}
+\newcommand{\calc2}{MATH-193}
+\newcommand{\linearAlgebra}{MATH-194}
+\newcommand{\physics}{PHYS-130}
+\newcommand{\cs1}{COMSC-165}
+\newcommand{\cs2}{COMSC-210}
+\newcommand{\discreteMathOrStructure}{MATH-195}
+\newcommand{\assemblyAndComputerArchitecture}{COMSC-260}
