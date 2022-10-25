@@ -7,14 +7,14 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-# Note: When creating project, check "inherit global-site packages" so that python can see pip3 libraries easily
-# If modifying these scopes, delete the file token.json.
+from College import College
+
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 
 # The ID and range of a sample spreadsheet.
 SPREADSHEET_ID = '1pwL5uqFL5t8QYTpBmDcitmmjZHeRfv93zh3PECebnV4'
-START_CELL = "B18"
-END_CELL = "I18"
+START_CELL = "A10"  # Chabot College
+END_CELL = "J19"  # LosMedanos College
 RANGE_ID = f'Transfer Courses Table!{START_CELL}:{END_CELL}'
 
 
@@ -43,31 +43,87 @@ def main():
         # Call the Sheets API to retrieve college data from spreadsheet
         sheet = service.spreadsheets()
         result = sheet.values().get(spreadsheetId=SPREADSHEET_ID,
-                                    range=RANGE_ID).execute()
-        colleges = result.get('values', [])
+                                    range=RANGE_ID
+                                    ).execute()
 
-        if not colleges:
+        college_data = result.get('values', [])
+
+        if not college_data:
             print('No data found.')
             return
 
-        createDVCfile(colleges)
+        # Main code here
+        generateLaTexCommandsFiles(college_data)
 
     except HttpError as err:
         print(err)
 
 
-def createDVCfile(colleges: List[str]):
-    course_name = ["calc1", "calc2", "linearAlgebra", "physics", "cs1", "cs2", "discreteMathOrStructure", "assemblyAndComputerArchitecture"]
-    # 1. Create dvc.txt file
-    with open('dvc_courses.txt', 'w') as f:
-        # Write latex commands to file
-        for college in colleges:
-            i = 0
-            for course in college:
-                # \newcommand{\course}{course}"
-                command = "\\newcommand" + "{\\" + course_name[i] + "}" + "{" + course + "}" + '\n'
-                f.write(command)
-                i += 1
+def generateLaTexCommandsFiles(college_data: List[str]):
+    # 1. Create dictionary of College objects
+    college_dict = createCollegeDictHelper(college_data)
+
+    # 2. Write latex commands for each college
+    for _, college in college_dict.items():
+        createLaTexFile(college)
+
+
+# Helper function to convert college spreadsheet into a map of College objects.
+def createCollegeDictHelper(college_data: List[str]) -> dict:
+    d = {}
+
+    # 1. Loop through colleges
+    for college in college_data:
+        college_name = college[0]
+
+        # First time seeing this college, initalize it
+        if college_name not in d:
+            d[college_name] = College()
+
+        # 2. Add courses to College
+        d[college_name].name = college[0]
+        d[college_name].calcI.append(college[1])
+        d[college_name].calcII.append(college[2])
+        d[college_name].linearAlgebra.append(college[3])
+        d[college_name].physics.append(college[4])
+        d[college_name].csI.append(college[5])
+        d[college_name].csII.append(college[6])
+        d[college_name].discreteMathOrStructure.append(college[7])
+        d[college_name].assemblyAndComputerArchitecture.append(college[7])
+
+    return d
+
+# Create LaTex command for college.
+# TODO: Deal with multiple courses
+def createLaTexFile(college: College) -> None:
+    course_name = ["collegeName", "calcI", "calcII", "linearAlgebra", "physics", "csI", "csII",
+                   "discreteMathOrStructure", "assemblyAndComputerArchitecture"]
+
+    with open(college.name + ".tex", 'w') as f:
+        # Write latex commands to file: \newcommand{\course}{course}
+        name_command = "\\newcommand" + "{\\" + course_name[0] + "}" + "{" + college.name + "}" + '\n'
+        calcI_command = "\\newcommand" + "{\\" + course_name[1] + "}" + "{" + " or ".join(college.calcI) + "}" + '\n'
+        calcII_command = "\\newcommand" + "{\\" + course_name[2] + "}" + "{" + " or ".join(college.calcII) + "}" + '\n'
+        linearAlgebra_command = "\\newcommand" + "{\\" + course_name[3] + "}" + "{" + " or ".join(
+            college.linearAlgebra) + "}" + '\n'
+        physics_command = "\\newcommand" + "{\\" + course_name[4] + "}" + "{" + " or ".join(
+            college.physics) + "}" + '\n'
+        csI_command = "\\newcommand" + "{\\" + course_name[5] + "}" + "{" + " or ".join(college.csI) + "}" + '\n'
+        csII_command = "\\newcommand" + "{\\" + course_name[6] + "}" + "{" + " or ".join(college.csII) + "}" + '\n'
+        discrete_command = "\\newcommand" + "{\\" + course_name[7] + "}" + "{" + " or ".join(
+            college.discreteMathOrStructure) + "}" + '\n'
+        assembly_command = "\\newcommand" + "{\\" + course_name[8] + "}" + "{" + " or ".join(
+            college.assemblyAndComputerArchitecture) + "}" + '\n'
+
+        f.write(name_command)
+        f.write(calcI_command)
+        f.write(calcII_command)
+        f.write(linearAlgebra_command)
+        f.write(physics_command)
+        f.write(csI_command)
+        f.write(csII_command)
+        f.write(discrete_command)
+        f.write(assembly_command)
 
     # Close file
     f.close()
