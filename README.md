@@ -1,7 +1,8 @@
 # CSUEBTransferCourses
-Script to generate latex files for college cs courses.
+Script to generate latex files for computer science courses from community colleges to CSU East Bay.
 
-# Libaries used
+## Libraries used
+
 google-api-python-client
 
 google-auth-httplib2
