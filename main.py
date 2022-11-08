@@ -47,7 +47,7 @@ def main():
                                     ).execute()
 
         college_data = result.get('values', [])
-
+        # print(college_data)
         if not college_data:
             print('No data found.')
             return
@@ -59,7 +59,7 @@ def main():
         print(err)
 
 
-def generateLaTexCommandsFiles(college_data: List[str]):
+def generateLaTexCommandsFiles(college_data: List[List[str]]):
     # 1. Create dictionary of College objects
     college_dict = createCollegeDictHelper(college_data)
 
@@ -67,9 +67,11 @@ def generateLaTexCommandsFiles(college_data: List[str]):
     for _, college in college_dict.items():
         createLaTexFile(college)
 
+    print("Done generating latext commands.")
+
 
 # Helper function to convert college spreadsheet into a map of College objects.
-def createCollegeDictHelper(college_data: List[str]) -> dict:
+def createCollegeDictHelper(college_data: List[List[str]]) -> dict:
     d = {}
 
     # 1. Loop through colleges
@@ -99,31 +101,34 @@ def createLaTexFile(college: College) -> None:
     course_name = ["collegeName", "calcI", "calcII", "linearAlgebra", "physics", "csI", "csII",
                    "discreteMathOrStructure", "assemblyAndComputerArchitecture"]
 
-    with open(college.name + ".tex", 'w') as f:
+    newpath = os.path.expanduser("~/Desktop/colleges/") # folder location to add colleges
+    # If directory doesn't exist, create it
+    if not os.path.exists(newpath):
+        print("Folder doesn't exist, creating one")
+        os.makedirs(newpath)
+
+    # create file in directory (if file exist, replace it)
+    with open(os.path.expanduser("~/Desktop/colleges/" + college.name + ".tex"), 'w') as f:
         # Write latex commands to file: \newcommand{\course}{course}
         name_command = "\\newcommand" + "{\\" + course_name[0] + "}" + "{" + college.name + "}" + '\n'
         calcI_command = "\\newcommand" + "{\\" + course_name[1] + "}" + "{" + " or ".join(college.calcI) + "}" + '\n'
         calcII_command = "\\newcommand" + "{\\" + course_name[2] + "}" + "{" + " or ".join(college.calcII) + "}" + '\n'
-        linearAlgebra_command = "\\newcommand" + "{\\" + course_name[3] + "}" + "{" + " or ".join(
-            college.linearAlgebra) + "}" + '\n'
-        physics_command = "\\newcommand" + "{\\" + course_name[4] + "}" + "{" + " or ".join(
-            college.physics) + "}" + '\n'
+        linearAlgebra_command = "\\newcommand" + "{\\" + course_name[3] + "}" + "{" + " or ".join(college.linearAlgebra) + "}" + '\n'
+        physics_command = "\\newcommand" + "{\\" + course_name[4] + "}" + "{" + " or ".join(college.physics) + "}" + '\n'
         csI_command = "\\newcommand" + "{\\" + course_name[5] + "}" + "{" + " or ".join(college.csI) + "}" + '\n'
         csII_command = "\\newcommand" + "{\\" + course_name[6] + "}" + "{" + " or ".join(college.csII) + "}" + '\n'
-        discrete_command = "\\newcommand" + "{\\" + course_name[7] + "}" + "{" + " or ".join(
-            college.discreteMathOrStructure) + "}" + '\n'
-        assembly_command = "\\newcommand" + "{\\" + course_name[8] + "}" + "{" + " or ".join(
-            college.assemblyAndComputerArchitecture) + "}" + '\n'
+        discrete_command = "\\newcommand" + "{\\" + course_name[7] + "}" + "{" + " or ".join(college.discreteMathOrStructure) + "}" + '\n'
+        assembly_command = "\\newcommand" + "{\\" + course_name[8] + "}" + "{" + " or ".join(college.assemblyAndComputerArchitecture) + "}" + '\n'
 
         f.write(name_command)
-        f.write(calcI_command)
-        f.write(calcII_command)
-        f.write(linearAlgebra_command)
-        f.write(physics_command)
-        f.write(csI_command)
-        f.write(csII_command)
-        f.write(discrete_command)
-        f.write(assembly_command)
+        f.write(calcI_command.replace(" or }", "}"))
+        f.write(calcII_command.replace(" or }", "}"))
+        f.write(linearAlgebra_command.replace(" or }", "}"))
+        f.write(physics_command.replace(" or }", "}"))
+        f.write(csI_command.replace(" or }", "}"))
+        f.write(csII_command.replace(" or }", "}"))
+        f.write(discrete_command.replace(" or }", "}"))
+        f.write(assembly_command.replace(" or }", "}"))
 
     # Close file
     f.close()
