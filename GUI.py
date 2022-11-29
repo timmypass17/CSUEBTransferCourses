@@ -1,8 +1,7 @@
-import tkinter
-from typing import List
+import os.path
 from tkinter import *
 from tkinter import ttk, filedialog
-import os.path
+from typing import List
 
 from CSUEBTransferCourses.College import College
 
@@ -20,7 +19,7 @@ class GUI:
         self.root.rowconfigure(0, weight=1)
         self.root.option_add('*tearOff', FALSE)
 
-        Label(self.mainframe, text="Script to generate LaTeX commands for CC CS schools.").grid(column=1, row=1,
+        Label(self.mainframe, text="Script to generate LaTeX course roadmaps for CC CS schools.").grid(column=1, row=1,
                                                                                                 columnspan=2, sticky=W)
         self.selectedCollege = StringVar(self.mainframe)
         self.selectedCollege.set("All")
@@ -35,7 +34,10 @@ class GUI:
         self.listBox.grid(column=1, row=2, columnspan=3, sticky=W)
 
         Label(self.mainframe, text="Destination Folder").grid(column=1, row=3, sticky=E)
-        ttk.Entry(self.mainframe, width=30, textvariable="Destination").grid(column=2, row=3, sticky=E)
+        self.filepath = StringVar()
+        ttk.Entry(self.mainframe, width=30, textvariable=self.filepath).grid(column=2, row=3, sticky=E)
+        self.filepath.set(os.path.expanduser("~/Desktop/CSUEB_Topology/"))
+
         ttk.Button(self.mainframe, text="Browse", command=self.openFolder).grid(column=3, row=3, sticky=W)
 
         ttk.Button(self.mainframe, text="Cancel", command=self.root.quit).grid(column=2, row=4,
@@ -53,9 +55,14 @@ class GUI:
 
         self.root.mainloop()
 
-    def openFolder(*args):
-        filedialog.askopenfilename(initialdir="/", title="Select file",
-                                   filetypes=(("jpeg files", "*.jpg"), ("all files", "*.*")))
+    def openFolder(self, *args):
+        filename = filedialog.askdirectory()
+        if filename != "":
+            print("selected folder")
+            self.filepath.set(filename)
+        else:
+            print("empty")
+            os.path.expanduser("~/Desktop/CSUEB_Topology/")
 
     def quit(self):
         self.root.destroy()
@@ -79,7 +86,7 @@ class GUI:
             self.listBox.insert("end", self.selectedCollege.get() + ".tex")
             self.createLaTexFile(college_dict[self.selectedCollege.get()])
 
-        print("Done generating latext commands.")
+        print("Done generating LaTex commands.")
 
     # Helper function to convert college spreadsheet into a map of College objects.
     def createCollegeDictHelper(self, college_data: List[List[str]]) -> dict:
@@ -102,50 +109,45 @@ class GUI:
             d[college_name].csI.append(college[5])
             d[college_name].csII.append(college[6])
             d[college_name].discreteMathOrStructure.append(college[7])
-            d[college_name].assemblyAndComputerArchitecture.append(college[7])
+            d[college_name].assemblyAndComputerArchitecture.append(college[8])
 
         return d
 
     # Create LaTex command for college.
     # TODO: Deal with multiple courses
     def createLaTexFile(self, college: College) -> None:
-        course_name = ["collegeName", "calcI", "calcII", "linearAlgebra", "physics", "csI", "csII",
-                       "discreteMathOrStructure", "assemblyAndComputerArchitecture"]
+        course_name = College.course_name
 
-        newpath = os.path.expanduser("~/Desktop/colleges/")  # folder location to add colleges
+        # newpath = os.path.expanduser("~/Desktop/colleges/")  # folder location to add colleges
         # If directory doesn't exist, create it
-        if not os.path.exists(newpath):
+        if not os.path.exists(self.filepath.get()):
             print("Folder doesn't exist, creating one")
-            os.makedirs(newpath)
+            os.makedirs(self.filepath.get())
 
         # create file in directory (if file exist, replace it)
-        with open(os.path.expanduser("~/Desktop/colleges/" + college.name + ".tex"), 'w') as f:
+        with open(os.path.expanduser(self.filepath.get() + "/" + college.name + ".tex"), 'w') as f:
             # Write latex commands to file: \newcommand{\course}{course}
-            name_command = "\\newcommand" + "{\\" + course_name[0] + "}" + "{" + college.name + "}" + '\n'
-            calcI_command = "\\newcommand" + "{\\" + course_name[1] + "}" + "{" + " or ".join(
-                college.calcI) + "}" + '\n'
-            calcII_command = "\\newcommand" + "{\\" + course_name[2] + "}" + "{" + " or ".join(
-                college.calcII) + "}" + '\n'
-            linearAlgebra_command = "\\newcommand" + "{\\" + course_name[3] + "}" + "{" + " or ".join(
-                college.linearAlgebra) + "}" + '\n'
-            physics_command = "\\newcommand" + "{\\" + course_name[4] + "}" + "{" + " or ".join(
-                college.physics) + "}" + '\n'
-            csI_command = "\\newcommand" + "{\\" + course_name[5] + "}" + "{" + " or ".join(college.csI) + "}" + '\n'
-            csII_command = "\\newcommand" + "{\\" + course_name[6] + "}" + "{" + " or ".join(college.csII) + "}" + '\n'
-            discrete_command = "\\newcommand" + "{\\" + course_name[7] + "}" + "{" + " or ".join(
-                college.discreteMathOrStructure) + "}" + '\n'
-            assembly_command = "\\newcommand" + "{\\" + course_name[8] + "}" + "{" + " or ".join(
-                college.assemblyAndComputerArchitecture) + "}" + '\n'
+            name_command = college.getNameCommand()
+            calcI_command = college.getCalcICommand()
+            calcII_command = college.getCalcIICommand()
+            linearAlgebra_command = college.getLinearAlgebraCommand()
+            physics_command = college.getPhysicsCommand()
+            csI_command = college.getCSICommand()
+            csII_command = college.getCSIICommand()
+            discrete_command = college.getDiscreteMathOrStructureCommand()
+            assembly_command = college.getAssemblyAndComputerArchitectureCommand()
 
             f.write(name_command)
-            f.write(calcI_command.replace(" or }", "}"))
-            f.write(calcII_command.replace(" or }", "}"))
-            f.write(linearAlgebra_command.replace(" or }", "}"))
-            f.write(physics_command.replace(" or }", "}"))
-            f.write(csI_command.replace(" or }", "}"))
-            f.write(csII_command.replace(" or }", "}"))
-            f.write(discrete_command.replace(" or }", "}"))
-            f.write(assembly_command.replace(" or }", "}"))
+            f.write(calcI_command)
+            f.write(calcII_command)
+            f.write(linearAlgebra_command)
+            f.write(physics_command)
+            f.write(csI_command)
+            f.write(csII_command)
+            f.write(discrete_command)
+            f.write(assembly_command)
+
+            f.write(College.roadmap_template)
 
         # Close file
         f.close()
